@@ -1,11 +1,30 @@
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
-
+from django.utils.dateparse import parse_datetime
 from interview.inventory.models import Inventory, InventoryLanguage, InventoryTag, InventoryType
 from interview.inventory.schemas import InventoryMetaData
 from interview.inventory.serializers import InventoryLanguageSerializer, InventorySerializer, InventoryTagSerializer, InventoryTypeSerializer
 
+
+class InventoryAfterDateView(APIView):
+    """
+    #Challenge1
+    Create a view that lists inventory items created after a certain day.
+    """
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        date_from = request.query_params.get('date_from')
+        if date_from:
+            date_from = parse_datetime(date_from)
+            if date_from is None:
+                return Response({'error': 'Invalid date format'}, status=400)
+            queryset = self.get_queryset().filter(created_at__gt=date_from)
+        else:
+            queryset = self.get_queryset()
+        
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data, status=200)
+    
 
 class InventoryListCreateView(APIView):
     queryset = Inventory.objects.all()
